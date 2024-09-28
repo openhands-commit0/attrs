@@ -1,51 +1,16 @@
-# SPDX-License-Identifier: MIT
-
 """
 These are keyword-only APIs that call `attr.s` and `attr.ib` with different
 default values.
 """
-
-
 from functools import partial
-
 from . import setters
 from ._funcs import asdict as _asdict
 from ._funcs import astuple as _astuple
-from ._make import (
-    _DEFAULT_ON_SETATTR,
-    NOTHING,
-    _frozen_setattrs,
-    attrib,
-    attrs,
-)
+from ._make import _DEFAULT_ON_SETATTR, NOTHING, _frozen_setattrs, attrib, attrs
 from .exceptions import UnannotatedAttributeError
 
-
-def define(
-    maybe_cls=None,
-    *,
-    these=None,
-    repr=None,
-    unsafe_hash=None,
-    hash=None,
-    init=None,
-    slots=True,
-    frozen=False,
-    weakref_slot=True,
-    str=False,
-    auto_attribs=None,
-    kw_only=False,
-    cache_hash=False,
-    auto_exc=True,
-    eq=None,
-    order=False,
-    auto_detect=True,
-    getstate_setstate=None,
-    on_setattr=None,
-    field_transformer=None,
-    match_args=True,
-):
-    r"""
+def define(maybe_cls=None, *, these=None, repr=None, unsafe_hash=None, hash=None, init=None, slots=True, frozen=False, weakref_slot=True, str=False, auto_attribs=None, kw_only=False, cache_hash=False, auto_exc=True, eq=None, order=False, auto_detect=True, getstate_setstate=None, on_setattr=None, field_transformer=None, match_args=True):
+    """
     A class decorator that adds :term:`dunder methods` according to
     :term:`fields <field>` specified using :doc:`type annotations <types>`,
     `field()` calls, or the *these* argument.
@@ -129,7 +94,7 @@ def define(
 
         str (bool):
             Create a ``__str__`` method that is identical to ``__repr__``. This
-            is usually not necessary except for `Exception`\ s.
+            is usually not necessary except for `Exception`\\ s.
 
         eq (bool | None):
             If True or None (default), add ``__eq__`` and ``__ne__`` methods
@@ -179,7 +144,7 @@ def define(
 
                 - Our documentation on `hashing`,
                 - Python's documentation on `object.__hash__`,
-                - and the `GitHub issue that led to the default \ behavior
+                - and the `GitHub issue that led to the default \\ behavior
                   <https://github.com/python-attrs/attrs/issues/136>`_ for more
                   details.
 
@@ -273,9 +238,9 @@ def define(
             If left None, it will guess:
 
             1. If any attributes are annotated and no unannotated
-               `attrs.field`\ s are found, it assumes *auto_attribs=True*.
+               `attrs.field`\\ s are found, it assumes *auto_attribs=True*.
             2. Otherwise it assumes *auto_attribs=False* and tries to collect
-               `attrs.field`\ s.
+               `attrs.field`\\ s.
 
             If *attrs* decides to look at type annotations, **all** fields
             **must** be annotated. If *attrs* encounters a field that is set to
@@ -343,95 +308,11 @@ def define(
           for backwards-compatibility have been removed.
 
     """
-
-    def do_it(cls, auto_attribs):
-        return attrs(
-            maybe_cls=cls,
-            these=these,
-            repr=repr,
-            hash=hash,
-            unsafe_hash=unsafe_hash,
-            init=init,
-            slots=slots,
-            frozen=frozen,
-            weakref_slot=weakref_slot,
-            str=str,
-            auto_attribs=auto_attribs,
-            kw_only=kw_only,
-            cache_hash=cache_hash,
-            auto_exc=auto_exc,
-            eq=eq,
-            order=order,
-            auto_detect=auto_detect,
-            collect_by_mro=True,
-            getstate_setstate=getstate_setstate,
-            on_setattr=on_setattr,
-            field_transformer=field_transformer,
-            match_args=match_args,
-        )
-
-    def wrap(cls):
-        """
-        Making this a wrapper ensures this code runs during class creation.
-
-        We also ensure that frozen-ness of classes is inherited.
-        """
-        nonlocal frozen, on_setattr
-
-        had_on_setattr = on_setattr not in (None, setters.NO_OP)
-
-        # By default, mutable classes convert & validate on setattr.
-        if frozen is False and on_setattr is None:
-            on_setattr = _DEFAULT_ON_SETATTR
-
-        # However, if we subclass a frozen class, we inherit the immutability
-        # and disable on_setattr.
-        for base_cls in cls.__bases__:
-            if base_cls.__setattr__ is _frozen_setattrs:
-                if had_on_setattr:
-                    msg = "Frozen classes can't use on_setattr (frozen-ness was inherited)."
-                    raise ValueError(msg)
-
-                on_setattr = setters.NO_OP
-                break
-
-        if auto_attribs is not None:
-            return do_it(cls, auto_attribs)
-
-        try:
-            return do_it(cls, True)
-        except UnannotatedAttributeError:
-            return do_it(cls, False)
-
-    # maybe_cls's type depends on the usage of the decorator.  It's a class
-    # if it's used as `@attrs` but `None` if used as `@attrs()`.
-    if maybe_cls is None:
-        return wrap
-
-    return wrap(maybe_cls)
-
-
+    pass
 mutable = define
 frozen = partial(define, frozen=True, on_setattr=None)
 
-
-def field(
-    *,
-    default=NOTHING,
-    validator=None,
-    repr=True,
-    hash=None,
-    init=True,
-    metadata=None,
-    type=None,
-    converter=None,
-    factory=None,
-    kw_only=False,
-    eq=None,
-    order=None,
-    on_setattr=None,
-    alias=None,
-):
+def field(*, default=NOTHING, validator=None, repr=True, hash=None, init=True, metadata=None, type=None, converter=None, factory=None, kw_only=False, eq=None, order=None, on_setattr=None, alias=None):
     """
     Create a new :term:`field` / :term:`attribute` on a class.
 
@@ -585,23 +466,7 @@ def field(
 
        `attr.ib`
     """
-    return attrib(
-        default=default,
-        validator=validator,
-        repr=repr,
-        hash=hash,
-        init=init,
-        metadata=metadata,
-        type=type,
-        converter=converter,
-        factory=factory,
-        kw_only=kw_only,
-        eq=eq,
-        order=order,
-        on_setattr=on_setattr,
-        alias=alias,
-    )
-
+    pass
 
 def asdict(inst, *, recurse=True, filter=None, value_serializer=None):
     """
@@ -610,14 +475,7 @@ def asdict(inst, *, recurse=True, filter=None, value_serializer=None):
 
     .. versionadded:: 21.3.0
     """
-    return _asdict(
-        inst=inst,
-        recurse=recurse,
-        filter=filter,
-        value_serializer=value_serializer,
-        retain_collection_types=True,
-    )
-
+    pass
 
 def astuple(inst, *, recurse=True, filter=None):
     """
@@ -626,6 +484,4 @@ def astuple(inst, *, recurse=True, filter=None):
 
     .. versionadded:: 21.3.0
     """
-    return _astuple(
-        inst=inst, recurse=recurse, filter=filter, retain_collection_types=True
-    )
+    pass

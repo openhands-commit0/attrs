@@ -1,9 +1,5 @@
-# SPDX-License-Identifier: MIT
-
 from __future__ import annotations
-
 from typing import ClassVar
-
 
 class FrozenError(AttributeError):
     """
@@ -15,10 +11,8 @@ class FrozenError(AttributeError):
 
     .. versionadded:: 20.1.0
     """
-
     msg = "can't set attribute"
     args: ClassVar[tuple[str]] = [msg]
-
 
 class FrozenInstanceError(FrozenError):
     """
@@ -27,14 +21,12 @@ class FrozenInstanceError(FrozenError):
     .. versionadded:: 16.1.0
     """
 
-
 class FrozenAttributeError(FrozenError):
     """
     A frozen attribute has been attempted to be modified.
 
     .. versionadded:: 20.1.0
     """
-
 
 class AttrsAttributeNotFoundError(ValueError):
     """
@@ -43,14 +35,12 @@ class AttrsAttributeNotFoundError(ValueError):
     .. versionadded:: 16.2.0
     """
 
-
 class NotAnAttrsClassError(ValueError):
     """
     A non-*attrs* class has been passed into an *attrs* function.
 
     .. versionadded:: 16.2.0
     """
-
 
 class DefaultAlreadySetError(RuntimeError):
     """
@@ -60,14 +50,12 @@ class DefaultAlreadySetError(RuntimeError):
     .. versionadded:: 17.1.0
     """
 
-
 class UnannotatedAttributeError(RuntimeError):
     """
     A class with ``auto_attribs=True`` has a field without a type annotation.
 
     .. versionadded:: 17.3.0
     """
-
 
 class PythonTooOldError(RuntimeError):
     """
@@ -76,7 +64,6 @@ class PythonTooOldError(RuntimeError):
 
     .. versionadded:: 18.2.0
     """
-
 
 class NotCallableError(TypeError):
     """

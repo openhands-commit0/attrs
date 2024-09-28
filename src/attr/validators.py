@@ -1,44 +1,15 @@
-# SPDX-License-Identifier: MIT
-
 """
 Commonly useful validators.
 """
-
-
 import operator
 import re
-
 from contextlib import contextmanager
 from re import Pattern
-
 from ._config import get_run_validators, set_run_validators
 from ._make import _AndValidator, and_, attrib, attrs
 from .converters import default_if_none
 from .exceptions import NotCallableError
-
-
-__all__ = [
-    "and_",
-    "deep_iterable",
-    "deep_mapping",
-    "disabled",
-    "ge",
-    "get_disabled",
-    "gt",
-    "in_",
-    "instance_of",
-    "is_callable",
-    "le",
-    "lt",
-    "matches_re",
-    "max_len",
-    "min_len",
-    "not_",
-    "optional",
-    "or_",
-    "set_disabled",
-]
-
+__all__ = ['and_', 'deep_iterable', 'deep_mapping', 'disabled', 'ge', 'get_disabled', 'gt', 'in_', 'instance_of', 'is_callable', 'le', 'lt', 'matches_re', 'max_len', 'min_len', 'not_', 'optional', 'or_', 'set_disabled']
 
 def set_disabled(disabled):
     """
@@ -55,8 +26,7 @@ def set_disabled(disabled):
 
     .. versionadded:: 21.3.0
     """
-    set_run_validators(not disabled)
-
+    pass
 
 def get_disabled():
     """
@@ -67,8 +37,7 @@ def get_disabled():
 
     .. versionadded:: 21.3.0
     """
-    return not get_run_validators()
-
+    pass
 
 @contextmanager
 def disabled():
@@ -81,12 +50,7 @@ def disabled():
 
     .. versionadded:: 21.3.0
     """
-    set_run_validators(False)
-    try:
-        yield
-    finally:
-        set_run_validators(True)
-
+    pass
 
 @attrs(repr=False, slots=True, unsafe_hash=True)
 class _InstanceOfValidator:
@@ -98,16 +62,10 @@ class _InstanceOfValidator:
         """
         if not isinstance(value, self.type):
             msg = f"'{attr.name}' must be {self.type!r} (got {value!r} that is a {value.__class__!r})."
-            raise TypeError(
-                msg,
-                attr,
-                self.type,
-                value,
-            )
+            raise TypeError(msg, attr, self.type, value)
 
     def __repr__(self):
-        return f"<instance_of validator for type {self.type!r}>"
-
+        return f'<instance_of validator for type {self.type!r}>'
 
 def instance_of(type):
     """
@@ -123,8 +81,7 @@ def instance_of(type):
             With a human readable error message, the attribute (of type
             `attrs.Attribute`), the expected type, and the value it got.
     """
-    return _InstanceOfValidator(type)
-
+    pass
 
 @attrs(repr=False, frozen=True, slots=True)
 class _MatchesReValidator:
@@ -137,19 +94,13 @@ class _MatchesReValidator:
         """
         if not self.match_func(value):
             msg = f"'{attr.name}' must match regex {self.pattern.pattern!r} ({value!r} doesn't)"
-            raise ValueError(
-                msg,
-                attr,
-                self.pattern,
-                value,
-            )
+            raise ValueError(msg, attr, self.pattern, value)
 
     def __repr__(self):
-        return f"<matches_re validator for pattern {self.pattern!r}>"
-
+        return f'<matches_re validator for pattern {self.pattern!r}>'
 
 def matches_re(regex, flags=0, func=None):
-    r"""
+    """
     A validator that raises `ValueError` if the initializer is called with a
     string that doesn't match *regex*.
 
@@ -169,32 +120,7 @@ def matches_re(regex, flags=0, func=None):
     .. versionadded:: 19.2.0
     .. versionchanged:: 21.3.0 *regex* can be a pre-compiled pattern.
     """
-    valid_funcs = (re.fullmatch, None, re.search, re.match)
-    if func not in valid_funcs:
-        msg = "'func' must be one of {}.".format(
-            ", ".join(
-                sorted(e and e.__name__ or "None" for e in set(valid_funcs))
-            )
-        )
-        raise ValueError(msg)
-
-    if isinstance(regex, Pattern):
-        if flags:
-            msg = "'flags' can only be used with a string pattern; pass flags to re.compile() instead"
-            raise TypeError(msg)
-        pattern = regex
-    else:
-        pattern = re.compile(regex, flags)
-
-    if func is re.match:
-        match_func = pattern.match
-    elif func is re.search:
-        match_func = pattern.search
-    else:
-        match_func = pattern.fullmatch
-
-    return _MatchesReValidator(pattern, match_func)
-
+    pass
 
 @attrs(repr=False, slots=True, unsafe_hash=True)
 class _OptionalValidator:
@@ -203,12 +129,10 @@ class _OptionalValidator:
     def __call__(self, inst, attr, value):
         if value is None:
             return
-
         self.validator(inst, attr, value)
 
     def __repr__(self):
-        return f"<optional validator for {self.validator!r} or None>"
-
+        return f'<optional validator for {self.validator!r} or None>'
 
 def optional(validator):
     """
@@ -225,11 +149,7 @@ def optional(validator):
     .. versionchanged:: 17.1.0 *validator* can be a list of validators.
     .. versionchanged:: 23.1.0 *validator* can also be a tuple of validators.
     """
-    if isinstance(validator, (list, tuple)):
-        return _OptionalValidator(_AndValidator(validator))
-
-    return _OptionalValidator(validator)
-
+    pass
 
 @attrs(repr=False, slots=True, unsafe_hash=True)
 class _InValidator:
@@ -239,21 +159,14 @@ class _InValidator:
     def __call__(self, inst, attr, value):
         try:
             in_options = value in self.options
-        except TypeError:  # e.g. `1 in "abc"`
+        except TypeError:
             in_options = False
-
         if not in_options:
             msg = f"'{attr.name}' must be in {self._original_options!r} (got {value!r})"
-            raise ValueError(
-                msg,
-                attr,
-                self._original_options,
-                value,
-            )
+            raise ValueError(msg, attr, self._original_options, value)
 
     def __repr__(self):
-        return f"<in_ validator with options {self._original_options!r}>"
-
+        return f'<in_ validator with options {self._original_options!r}>'
 
 def in_(options):
     """
@@ -283,34 +196,21 @@ def in_(options):
        *options* that are a list, dict, or a set are now transformed into a
        tuple to keep the validator hashable.
     """
-    repr_options = options
-    if isinstance(options, (list, dict, set)):
-        options = tuple(options)
-
-    return _InValidator(options, repr_options)
-
+    pass
 
 @attrs(repr=False, slots=False, unsafe_hash=True)
 class _IsCallableValidator:
+
     def __call__(self, inst, attr, value):
         """
         We use a callable class to be able to change the ``__repr__``.
         """
         if not callable(value):
-            message = (
-                "'{name}' must be callable "
-                "(got {value!r} that is a {actual!r})."
-            )
-            raise NotCallableError(
-                msg=message.format(
-                    name=attr.name, value=value, actual=value.__class__
-                ),
-                value=value,
-            )
+            message = "'{name}' must be callable (got {value!r} that is a {actual!r})."
+            raise NotCallableError(msg=message.format(name=attr.name, value=value, actual=value.__class__), value=value)
 
     def __repr__(self):
-        return "<is_callable validator>"
-
+        return '<is_callable validator>'
 
 def is_callable():
     """
@@ -325,15 +225,12 @@ def is_callable():
             With a human readable error message containing the attribute
             (`attrs.Attribute`) name, and the value it got.
     """
-    return _IsCallableValidator()
-
+    pass
 
 @attrs(repr=False, slots=True, unsafe_hash=True)
 class _DeepIterable:
     member_validator = attrib(validator=is_callable())
-    iterable_validator = attrib(
-        default=None, validator=optional(is_callable())
-    )
+    iterable_validator = attrib(default=None, validator=optional(is_callable()))
 
     def __call__(self, inst, attr, value):
         """
@@ -341,21 +238,12 @@ class _DeepIterable:
         """
         if self.iterable_validator is not None:
             self.iterable_validator(inst, attr, value)
-
         for member in value:
             self.member_validator(inst, attr, member)
 
     def __repr__(self):
-        iterable_identifier = (
-            ""
-            if self.iterable_validator is None
-            else f" {self.iterable_validator!r}"
-        )
-        return (
-            f"<deep_iterable validator for{iterable_identifier}"
-            f" iterables of {self.member_validator!r}>"
-        )
-
+        iterable_identifier = '' if self.iterable_validator is None else f' {self.iterable_validator!r}'
+        return f'<deep_iterable validator for{iterable_identifier} iterables of {self.member_validator!r}>'
 
 def deep_iterable(member_validator, iterable_validator=None):
     """
@@ -372,10 +260,7 @@ def deep_iterable(member_validator, iterable_validator=None):
 
     .. versionadded:: 19.1.0
     """
-    if isinstance(member_validator, (list, tuple)):
-        member_validator = and_(*member_validator)
-    return _DeepIterable(member_validator, iterable_validator)
-
+    pass
 
 @attrs(repr=False, slots=True, unsafe_hash=True)
 class _DeepMapping:
@@ -389,14 +274,12 @@ class _DeepMapping:
         """
         if self.mapping_validator is not None:
             self.mapping_validator(inst, attr, value)
-
         for key in value:
             self.key_validator(inst, attr, key)
             self.value_validator(inst, attr, value[key])
 
     def __repr__(self):
-        return f"<deep_mapping validator for objects mapping {self.key_validator!r} to {self.value_validator!r}>"
-
+        return f'<deep_mapping validator for objects mapping {self.key_validator!r} to {self.value_validator!r}>'
 
 def deep_mapping(key_validator, value_validator, mapping_validator=None):
     """
@@ -415,8 +298,7 @@ def deep_mapping(key_validator, value_validator, mapping_validator=None):
     Raises:
         TypeError: if any sub-validators fail
     """
-    return _DeepMapping(key_validator, value_validator, mapping_validator)
-
+    pass
 
 @attrs(repr=False, frozen=True, slots=True)
 class _NumberValidator:
@@ -433,8 +315,7 @@ class _NumberValidator:
             raise ValueError(msg)
 
     def __repr__(self):
-        return f"<Validator for x {self.compare_op} {self.bound}>"
-
+        return f'<Validator for x {self.compare_op} {self.bound}>'
 
 def lt(val):
     """
@@ -448,8 +329,7 @@ def lt(val):
 
     .. versionadded:: 21.3.0
     """
-    return _NumberValidator(val, "<", operator.lt)
-
+    pass
 
 def le(val):
     """
@@ -463,8 +343,7 @@ def le(val):
 
     .. versionadded:: 21.3.0
     """
-    return _NumberValidator(val, "<=", operator.le)
-
+    pass
 
 def ge(val):
     """
@@ -478,8 +357,7 @@ def ge(val):
 
     .. versionadded:: 21.3.0
     """
-    return _NumberValidator(val, ">=", operator.ge)
-
+    pass
 
 def gt(val):
     """
@@ -493,8 +371,7 @@ def gt(val):
 
     .. versionadded:: 21.3.0
     """
-    return _NumberValidator(val, ">", operator.gt)
-
+    pass
 
 @attrs(repr=False, frozen=True, slots=True)
 class _MaxLengthValidator:
@@ -509,8 +386,7 @@ class _MaxLengthValidator:
             raise ValueError(msg)
 
     def __repr__(self):
-        return f"<max_len validator for {self.max_length}>"
-
+        return f'<max_len validator for {self.max_length}>'
 
 def max_len(length):
     """
@@ -522,8 +398,7 @@ def max_len(length):
 
     .. versionadded:: 21.3.0
     """
-    return _MaxLengthValidator(length)
-
+    pass
 
 @attrs(repr=False, frozen=True, slots=True)
 class _MinLengthValidator:
@@ -538,8 +413,7 @@ class _MinLengthValidator:
             raise ValueError(msg)
 
     def __repr__(self):
-        return f"<min_len validator for {self.min_length}>"
-
+        return f'<min_len validator for {self.min_length}>'
 
 def min_len(length):
     """
@@ -551,8 +425,7 @@ def min_len(length):
 
     .. versionadded:: 22.1.0
     """
-    return _MinLengthValidator(length)
-
+    pass
 
 @attrs(repr=False, slots=True, unsafe_hash=True)
 class _SubclassOfValidator:
@@ -564,16 +437,10 @@ class _SubclassOfValidator:
         """
         if not issubclass(value, self.type):
             msg = f"'{attr.name}' must be a subclass of {self.type!r} (got {value!r})."
-            raise TypeError(
-                msg,
-                attr,
-                self.type,
-                value,
-            )
+            raise TypeError(msg, attr, self.type, value)
 
     def __repr__(self):
-        return f"<subclass_of validator for type {self.type!r}>"
-
+        return f'<subclass_of validator for type {self.type!r}>'
 
 def _subclass_of(type):
     """
@@ -589,45 +456,24 @@ def _subclass_of(type):
             With a human readable error message, the attribute (of type
             `attrs.Attribute`), the expected type, and the value it got.
     """
-    return _SubclassOfValidator(type)
-
+    pass
 
 @attrs(repr=False, slots=True, unsafe_hash=True)
 class _NotValidator:
     validator = attrib()
-    msg = attrib(
-        converter=default_if_none(
-            "not_ validator child '{validator!r}' "
-            "did not raise a captured error"
-        )
-    )
-    exc_types = attrib(
-        validator=deep_iterable(
-            member_validator=_subclass_of(Exception),
-            iterable_validator=instance_of(tuple),
-        ),
-    )
+    msg = attrib(converter=default_if_none("not_ validator child '{validator!r}' did not raise a captured error"))
+    exc_types = attrib(validator=deep_iterable(member_validator=_subclass_of(Exception), iterable_validator=instance_of(tuple)))
 
     def __call__(self, inst, attr, value):
         try:
             self.validator(inst, attr, value)
         except self.exc_types:
-            pass  # suppress error to invert validity
+            pass
         else:
-            raise ValueError(
-                self.msg.format(
-                    validator=self.validator,
-                    exc_types=self.exc_types,
-                ),
-                attr,
-                self.validator,
-                value,
-                self.exc_types,
-            )
+            raise ValueError(self.msg.format(validator=self.validator, exc_types=self.exc_types), attr, self.validator, value, self.exc_types)
 
     def __repr__(self):
-        return f"<not_ validator wrapping {self.validator!r}, capturing {self.exc_types!r}>"
-
+        return f'<not_ validator wrapping {self.validator!r}, capturing {self.exc_types!r}>'
 
 def not_(validator, *, msg=None, exc_types=(ValueError, TypeError)):
     """
@@ -658,12 +504,7 @@ def not_(validator, *, msg=None, exc_types=(ValueError, TypeError)):
 
     .. versionadded:: 22.2.0
     """
-    try:
-        exc_types = tuple(exc_types)
-    except TypeError:
-        exc_types = (exc_types,)
-    return _NotValidator(validator, msg, exc_types)
-
+    pass
 
 @attrs(repr=False, slots=True, unsafe_hash=True)
 class _OrValidator:
@@ -673,17 +514,15 @@ class _OrValidator:
         for v in self.validators:
             try:
                 v(inst, attr, value)
-            except Exception:  # noqa: BLE001, PERF203, S112
+            except Exception:
                 continue
             else:
                 return
-
-        msg = f"None of {self.validators!r} satisfied for value {value!r}"
+        msg = f'None of {self.validators!r} satisfied for value {value!r}'
         raise ValueError(msg)
 
     def __repr__(self):
-        return f"<or validator wrapping {self.validators!r}>"
-
+        return f'<or validator wrapping {self.validators!r}>'
 
 def or_(*validators):
     """
@@ -704,8 +543,4 @@ def or_(*validators):
 
     .. versionadded:: 24.1.0
     """
-    vals = []
-    for v in validators:
-        vals.extend(v.validators if isinstance(v, _OrValidator) else [v])
-
-    return _OrValidator(tuple(vals))
+    pass

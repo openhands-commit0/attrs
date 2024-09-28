@@ -1,21 +1,9 @@
-# SPDX-License-Identifier: MIT
-
-
 import copy
-
 from ._compat import PY_3_9_PLUS, get_generic_base
 from ._make import _OBJ_SETATTR, NOTHING, fields
 from .exceptions import AttrsAttributeNotFoundError
 
-
-def asdict(
-    inst,
-    recurse=True,
-    filter=None,
-    dict_factory=dict,
-    retain_collection_types=False,
-    value_serializer=None,
-):
+def asdict(inst, recurse=True, filter=None, dict_factory=dict, retain_collection_types=False, value_serializer=None):
     """
     Return the *attrs* attribute values of *inst* as a dict.
 
@@ -60,157 +48,15 @@ def asdict(
     ..  versionadded:: 21.3.0
         If a dict has a collection for a key, it is serialized as a tuple.
     """
-    attrs = fields(inst.__class__)
-    rv = dict_factory()
-    for a in attrs:
-        v = getattr(inst, a.name)
-        if filter is not None and not filter(a, v):
-            continue
+    pass
 
-        if value_serializer is not None:
-            v = value_serializer(inst, a, v)
-
-        if recurse is True:
-            if has(v.__class__):
-                rv[a.name] = asdict(
-                    v,
-                    recurse=True,
-                    filter=filter,
-                    dict_factory=dict_factory,
-                    retain_collection_types=retain_collection_types,
-                    value_serializer=value_serializer,
-                )
-            elif isinstance(v, (tuple, list, set, frozenset)):
-                cf = v.__class__ if retain_collection_types is True else list
-                items = [
-                    _asdict_anything(
-                        i,
-                        is_key=False,
-                        filter=filter,
-                        dict_factory=dict_factory,
-                        retain_collection_types=retain_collection_types,
-                        value_serializer=value_serializer,
-                    )
-                    for i in v
-                ]
-                try:
-                    rv[a.name] = cf(items)
-                except TypeError:
-                    if not issubclass(cf, tuple):
-                        raise
-                    # Workaround for TypeError: cf.__new__() missing 1 required
-                    # positional argument (which appears, for a namedturle)
-                    rv[a.name] = cf(*items)
-            elif isinstance(v, dict):
-                df = dict_factory
-                rv[a.name] = df(
-                    (
-                        _asdict_anything(
-                            kk,
-                            is_key=True,
-                            filter=filter,
-                            dict_factory=df,
-                            retain_collection_types=retain_collection_types,
-                            value_serializer=value_serializer,
-                        ),
-                        _asdict_anything(
-                            vv,
-                            is_key=False,
-                            filter=filter,
-                            dict_factory=df,
-                            retain_collection_types=retain_collection_types,
-                            value_serializer=value_serializer,
-                        ),
-                    )
-                    for kk, vv in v.items()
-                )
-            else:
-                rv[a.name] = v
-        else:
-            rv[a.name] = v
-    return rv
-
-
-def _asdict_anything(
-    val,
-    is_key,
-    filter,
-    dict_factory,
-    retain_collection_types,
-    value_serializer,
-):
+def _asdict_anything(val, is_key, filter, dict_factory, retain_collection_types, value_serializer):
     """
     ``asdict`` only works on attrs instances, this works on anything.
     """
-    if getattr(val.__class__, "__attrs_attrs__", None) is not None:
-        # Attrs class.
-        rv = asdict(
-            val,
-            recurse=True,
-            filter=filter,
-            dict_factory=dict_factory,
-            retain_collection_types=retain_collection_types,
-            value_serializer=value_serializer,
-        )
-    elif isinstance(val, (tuple, list, set, frozenset)):
-        if retain_collection_types is True:
-            cf = val.__class__
-        elif is_key:
-            cf = tuple
-        else:
-            cf = list
+    pass
 
-        rv = cf(
-            [
-                _asdict_anything(
-                    i,
-                    is_key=False,
-                    filter=filter,
-                    dict_factory=dict_factory,
-                    retain_collection_types=retain_collection_types,
-                    value_serializer=value_serializer,
-                )
-                for i in val
-            ]
-        )
-    elif isinstance(val, dict):
-        df = dict_factory
-        rv = df(
-            (
-                _asdict_anything(
-                    kk,
-                    is_key=True,
-                    filter=filter,
-                    dict_factory=df,
-                    retain_collection_types=retain_collection_types,
-                    value_serializer=value_serializer,
-                ),
-                _asdict_anything(
-                    vv,
-                    is_key=False,
-                    filter=filter,
-                    dict_factory=df,
-                    retain_collection_types=retain_collection_types,
-                    value_serializer=value_serializer,
-                ),
-            )
-            for kk, vv in val.items()
-        )
-    else:
-        rv = val
-        if value_serializer is not None:
-            rv = value_serializer(None, None, rv)
-
-    return rv
-
-
-def astuple(
-    inst,
-    recurse=True,
-    filter=None,
-    tuple_factory=tuple,
-    retain_collection_types=False,
-):
+def astuple(inst, recurse=True, filter=None, tuple_factory=tuple, retain_collection_types=False):
     """
     Return the *attrs* attribute values of *inst* as a tuple.
 
@@ -246,82 +92,7 @@ def astuple(
 
     ..  versionadded:: 16.2.0
     """
-    attrs = fields(inst.__class__)
-    rv = []
-    retain = retain_collection_types  # Very long. :/
-    for a in attrs:
-        v = getattr(inst, a.name)
-        if filter is not None and not filter(a, v):
-            continue
-        if recurse is True:
-            if has(v.__class__):
-                rv.append(
-                    astuple(
-                        v,
-                        recurse=True,
-                        filter=filter,
-                        tuple_factory=tuple_factory,
-                        retain_collection_types=retain,
-                    )
-                )
-            elif isinstance(v, (tuple, list, set, frozenset)):
-                cf = v.__class__ if retain is True else list
-                items = [
-                    (
-                        astuple(
-                            j,
-                            recurse=True,
-                            filter=filter,
-                            tuple_factory=tuple_factory,
-                            retain_collection_types=retain,
-                        )
-                        if has(j.__class__)
-                        else j
-                    )
-                    for j in v
-                ]
-                try:
-                    rv.append(cf(items))
-                except TypeError:
-                    if not issubclass(cf, tuple):
-                        raise
-                    # Workaround for TypeError: cf.__new__() missing 1 required
-                    # positional argument (which appears, for a namedturle)
-                    rv.append(cf(*items))
-            elif isinstance(v, dict):
-                df = v.__class__ if retain is True else dict
-                rv.append(
-                    df(
-                        (
-                            (
-                                astuple(
-                                    kk,
-                                    tuple_factory=tuple_factory,
-                                    retain_collection_types=retain,
-                                )
-                                if has(kk.__class__)
-                                else kk
-                            ),
-                            (
-                                astuple(
-                                    vv,
-                                    tuple_factory=tuple_factory,
-                                    retain_collection_types=retain,
-                                )
-                                if has(vv.__class__)
-                                else vv
-                            ),
-                        )
-                        for kk, vv in v.items()
-                    )
-                )
-            else:
-                rv.append(v)
-        else:
-            rv.append(v)
-
-    return rv if tuple_factory is list else tuple_factory(rv)
-
+    pass
 
 def has(cls):
     """
@@ -336,20 +107,7 @@ def has(cls):
     Returns:
         bool:
     """
-    attrs = getattr(cls, "__attrs_attrs__", None)
-    if attrs is not None:
-        return True
-
-    # No attrs, maybe it's a specialized generic (A[str])?
-    generic_base = get_generic_base(cls)
-    if generic_base is not None:
-        generic_attrs = getattr(generic_base, "__attrs_attrs__", None)
-        if generic_attrs is not None:
-            # Stick it on here for speed next time.
-            cls.__attrs_attrs__ = generic_attrs
-        return generic_attrs is not None
-    return False
-
+    pass
 
 def assoc(inst, **changes):
     """
@@ -383,16 +141,7 @@ def assoc(inst, **changes):
         removed du to the slightly different approach compared to
         `attrs.evolve`, though.
     """
-    new = copy.copy(inst)
-    attrs = fields(inst.__class__)
-    for k, v in changes.items():
-        a = getattr(attrs, k, NOTHING)
-        if a is NOTHING:
-            msg = f"{k} is not an attrs attribute on {new.__class__}."
-            raise AttrsAttributeNotFoundError(msg)
-        _OBJ_SETATTR(new, k, v)
-    return new
-
+    pass
 
 def evolve(*args, **changes):
     """
@@ -427,30 +176,9 @@ def evolve(*args, **changes):
     .. versionchanged:: 24.1.0
        *inst* can't be passed as a keyword argument anymore.
     """
-    try:
-        (inst,) = args
-    except ValueError:
-        msg = (
-            f"evolve() takes 1 positional argument, but {len(args)} were given"
-        )
-        raise TypeError(msg) from None
+    pass
 
-    cls = inst.__class__
-    attrs = fields(cls)
-    for a in attrs:
-        if not a.init:
-            continue
-        attr_name = a.name  # To deal with private attributes.
-        init_name = a.alias
-        if init_name not in changes:
-            changes[init_name] = getattr(inst, attr_name)
-
-    return cls(**changes)
-
-
-def resolve_types(
-    cls, globalns=None, localns=None, attribs=None, include_extras=True
-):
+def resolve_types(cls, globalns=None, localns=None, attribs=None, include_extras=True):
     """
     Resolve any strings and forward annotations in type annotations.
 
@@ -499,24 +227,4 @@ def resolve_types(
     ..  versionadded:: 21.1.0 *attribs*
     ..  versionadded:: 23.1.0 *include_extras*
     """
-    # Since calling get_type_hints is expensive we cache whether we've
-    # done it already.
-    if getattr(cls, "__attrs_types_resolved__", None) != cls:
-        import typing
-
-        kwargs = {"globalns": globalns, "localns": localns}
-
-        if PY_3_9_PLUS:
-            kwargs["include_extras"] = include_extras
-
-        hints = typing.get_type_hints(cls, **kwargs)
-        for field in fields(cls) if attribs is None else attribs:
-            if field.name in hints:
-                # Since fields have been frozen we must work around it.
-                _OBJ_SETATTR(field, "type", hints[field.name])
-        # We store the class we resolved so that subclasses know they haven't
-        # been resolved.
-        cls.__attrs_types_resolved__ = cls
-
-    # Return the class so you can use it as a decorator too.
-    return cls
+    pass

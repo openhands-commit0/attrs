@@ -1,9 +1,5 @@
-# SPDX-License-Identifier: MIT
-
-__all__ = ["set_run_validators", "get_run_validators"]
-
+__all__ = ['set_run_validators', 'get_run_validators']
 _run_validators = True
-
 
 def set_run_validators(run):
     """
@@ -13,12 +9,7 @@ def set_run_validators(run):
         moved to new ``attrs`` namespace. Use `attrs.validators.set_disabled()`
         instead.
     """
-    if not isinstance(run, bool):
-        msg = "'run' must be bool."
-        raise TypeError(msg)
-    global _run_validators
-    _run_validators = run
-
+    pass
 
 def get_run_validators():
     """
@@ -28,4 +19,4 @@ def get_run_validators():
         moved to new ``attrs`` namespace. Use `attrs.validators.get_disabled()`
         instead.
     """
-    return _run_validators
+    pass
