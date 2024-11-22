@@ -273,14 +273,59 @@ def _determine_attrs_eq_order(cmp, eq, order, default_eq):
     Validate the combination of *cmp*, *eq*, and *order*. Derive the effective
     values of eq and order.  If *eq* is None, set it to *default_eq*.
     """
-    pass
+    if cmp is not None and (eq is not None or order is not None):
+        raise ValueError("Don't mix `cmp` with `eq' and `order`.")
+
+    if cmp is not None:
+        return cmp, cmp
+
+    # Convert eq and order to their effective values
+    if eq is None:
+        eq = default_eq
+
+    if order is None:
+        order = eq
+
+    if order and not eq:
+        raise ValueError("`order` can only be True if `eq` is True too.")
+
+    return eq, order
 
 def _determine_attrib_eq_order(cmp, eq, order, default_eq):
     """
     Validate the combination of *cmp*, *eq*, and *order*. Derive the effective
     values of eq and order.  If *eq* is None, set it to *default_eq*.
     """
-    pass
+    if cmp is not None and (eq is not None or order is not None):
+        raise ValueError("Don't mix `cmp` with `eq' and `order`.")
+
+    # If cmp is provided, use it for both eq and order
+    if cmp is not None:
+        return cmp, None, cmp, None
+
+    # Convert eq and order to their effective values
+    if eq is None:
+        eq = default_eq
+
+    if order is None:
+        order = eq
+
+    # Handle callable eq/order by converting them to eq_key/order_key
+    eq_key = None
+    order_key = None
+
+    if callable(eq) and not isinstance(eq, bool):
+        eq_key = eq
+        eq = True
+
+    if callable(order) and not isinstance(order, bool):
+        order_key = order
+        order = True
+
+    if order and not eq:
+        raise ValueError("`order` can only be True if `eq` is True too.")
+
+    return eq, eq_key, order, order_key
 
 def _determine_whether_to_implement(cls, flag, auto_detect, dunders, default=True):
     """
@@ -526,8 +571,17 @@ def _default_init_alias_for(name: str) -> str:
 
     This performs private-name adjustment via leading-unscore stripping,
     and is the default value of Attribute.alias if not provided.
+
+    Args:
+        name: The attribute name to process.
+
+    Returns:
+        The parameter name to use in __init__.
     """
-    pass
+    # Strip leading underscores from private names
+    while name.startswith('_'):
+        name = name[1:]
+    return name
 
 class Attribute:
     """
@@ -574,7 +628,12 @@ class Attribute:
     __slots__ = ('name', 'default', 'validator', 'repr', 'eq', 'eq_key', 'order', 'order_key', 'hash', 'init', 'metadata', 'type', 'converter', 'kw_only', 'inherited', 'on_setattr', 'alias')
 
     def __init__(self, name, default, validator, repr, cmp, hash, init, inherited, metadata=None, type=None, converter=None, kw_only=False, eq=None, eq_key=None, order=None, order_key=None, on_setattr=None, alias=None):
-        eq, eq_key, order, order_key = _determine_attrib_eq_order(cmp, eq_key or eq, order_key or order, True)
+        # Handle eq and order before determining their final values
+        if eq_key is not None:
+            eq = True
+        if order_key is not None:
+            order = True
+        eq, eq_key, order, order_key = _determine_attrib_eq_order(cmp, eq, order, True)
         bound_setattr = _OBJ_SETATTR.__get__(self)
         bound_setattr('name', name)
         bound_setattr('default', default)
@@ -621,8 +680,6 @@ class Attribute:
         Play nice with pickle.
         """
         self._setattrs(zip(self.__slots__, state))
-_a = [Attribute(name=name, default=NOTHING, validator=None, repr=True, cmp=None, eq=True, order=False, hash=name != 'metadata', init=True, inherited=False, alias=_default_init_alias_for(name)) for name in Attribute.__slots__]
-Attribute = _add_hash(_add_eq(_add_repr(Attribute, attrs=_a), attrs=[a for a in _a if a.name != 'inherited']), attrs=[a for a in _a if a.hash and a.name != 'inherited'])
 
 class _CountingAttr:
     """
@@ -861,3 +918,9 @@ def pipe(*converters):
     .. versionadded:: 20.1.0
     """
     pass
+
+# Create Attribute instances for each slot
+_a = [Attribute(name=name, default=NOTHING, validator=None, repr=True, cmp=None, eq=True, order=False, hash=name != 'metadata', init=True, inherited=False, alias=_default_init_alias_for(name)) for name in Attribute.__slots__]
+
+# Add hash, eq and repr methods to Attribute class
+Attribute = _add_hash(_add_eq(_add_repr(Attribute, attrs=_a), attrs=[a for a in _a if a.name != 'inherited']), attrs=[a for a in _a if a.hash and a.name != 'inherited'])
